@@ -34,6 +34,7 @@ class BrowserManager:
         self.network_errors: list[dict] = []
         self.blocked_requests: list[str] = []
         self.http_errors: list[dict] = []
+        self.api_calls: list[dict] = []  # every non-GET response, any status
 
         self._playwright: Playwright | None = None
         self._browser: Browser | None = None
@@ -44,6 +45,13 @@ class BrowserManager:
     def start(self) -> "BrowserManager":
         self._playwright = sync_playwright().start()
         self._browser = self._playwright.chromium.launch(headless=self.headless)
+        self.new_session()
+        return self
+
+    def new_session(self) -> None:
+        """Open a clean, logged-out context. Collected logs are kept."""
+        if self._context:
+            self._context.close()
         self._context = self._browser.new_context(
             viewport={"width": 1280, "height": 800}
         )
@@ -54,7 +62,6 @@ class BrowserManager:
         self.page.on("console", self._on_console)
         self.page.on("requestfailed", self._on_request_failed)
         self.page.on("response", self._on_response)
-        return self
 
     def stop(self) -> None:
         if self._context:
@@ -91,14 +98,15 @@ class BrowserManager:
         self.network_errors.append({"url": request.url, "failure": request.failure})
 
     def _on_response(self, response) -> None:
+        entry = {
+            "url": response.url,
+            "status": response.status,
+            "method": response.request.method,
+        }
         if response.status >= 400:
-            self.http_errors.append(
-                {
-                    "url": response.url,
-                    "status": response.status,
-                    "method": response.request.method,
-                }
-            )
+            self.http_errors.append(entry)
+        if entry["method"] != "GET":
+            self.api_calls.append(entry)
 
     def _use_action(self) -> None:
         if self.actions_used >= self.max_actions:
