@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     debug: bool = False
     cors_origins: list[str] = ["http://localhost:5174"]
+    database_url: str
 
     model_config = SettingsConfigDict(
         env_file=".env",
