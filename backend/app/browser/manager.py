@@ -33,6 +33,7 @@ class BrowserManager:
         self.console_messages: list[dict] = []
         self.network_errors: list[dict] = []
         self.blocked_requests: list[str] = []
+        self.http_errors: list[dict] = []
 
         self._playwright: Playwright | None = None
         self._browser: Browser | None = None
@@ -52,6 +53,7 @@ class BrowserManager:
         self.page = self._context.new_page()
         self.page.on("console", self._on_console)
         self.page.on("requestfailed", self._on_request_failed)
+        self.page.on("response", self._on_response)
         return self
 
     def stop(self) -> None:
@@ -87,6 +89,16 @@ class BrowserManager:
 
     def _on_request_failed(self, request) -> None:
         self.network_errors.append({"url": request.url, "failure": request.failure})
+
+    def _on_response(self, response) -> None:
+        if response.status >= 400:
+            self.http_errors.append(
+                {
+                    "url": response.url,
+                    "status": response.status,
+                    "method": response.request.method,
+                }
+            )
 
     def _use_action(self) -> None:
         if self.actions_used >= self.max_actions:
