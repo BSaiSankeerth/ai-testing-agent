@@ -1,6 +1,6 @@
 import json
 
-from groq import Groq
+from groq import BadRequestError, Groq
 from pydantic import ValidationError
 
 from app.core.config import get_settings
@@ -15,15 +15,29 @@ class GroqClient:
         self.model = model or settings.llm_model
         self._client = Groq(api_key=settings.groq_api_key.get_secret_value())
 
-    def _chat(self, messages: list[dict], json_mode: bool = False) -> str:
+    def _chat(self, messages: list[dict], json_mode: bool = False, attempts: int = 3) -> str:
         kwargs = {"model": self.model, "messages": messages, "temperature": 0.2}
         if json_mode:
             kwargs["response_format"] = {"type": "json_object"}
-        try:
-            response = self._client.chat.completions.create(**kwargs)
-        except Exception as exc:  # network, auth, rate limit, bad model name
-            raise LLMError(f"Groq request failed: {type(exc).__name__}: {exc}") from exc
-        return response.choices[0].message.content or ""
+
+        last_error: Exception | None = None
+        for _ in range(attempts):
+            try:
+                response = self._client.chat.completions.create(**kwargs)
+                return response.choices[0].message.content or ""
+            except BadRequestError as exc:
+                # Groq rejected the model's JSON as malformed: just try again.
+                if json_mode and "json_validate_failed" in str(exc):
+                    last_error = exc
+                    continue
+                raise LLMError(f"Groq request failed: {str(exc)[:300]}") from exc
+            except Exception as exc:  # network, auth, rate limit, bad model name
+                raise LLMError(
+                    f"Groq request failed: {type(exc).__name__}: {str(exc)[:300]}"
+                ) from exc
+        raise LLMError(
+            f"Groq could not produce valid JSON after {attempts} attempts"
+        ) from last_error
 
     def complete_text(self, system: str, user: str) -> str:
         return self._chat(
@@ -55,4 +69,6 @@ class GroqClient:
             try:
                 return schema.model_validate_json(raw)
             except ValidationError as second_error:
-                raise LLMOutputError(f"Model output invalid twice: {second_error}") from second_error
+                raise LLMOutputError(
+                    f"Model output invalid twice: {str(second_error)[:300]}"
+                ) from second_error
