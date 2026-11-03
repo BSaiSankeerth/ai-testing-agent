@@ -1,0 +1,25 @@
+@"
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Environment and secrets
+.env
+*.env.local
+
+# Node
+node_modules/
+dist/
+
+# Evidence and local artifacts
+backend/storage/
+*.log
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+"@ | Set-Content -Path ".gitignore" -Encoding utf8
