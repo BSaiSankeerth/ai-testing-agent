@@ -1,3 +1,5 @@
+import re
+
 from playwright.sync_api import Page
 
 _INSPECT_JS = """
@@ -9,6 +11,12 @@ _INSPECT_JS = """
            s.visibility !== 'hidden' && s.display !== 'none';
   };
   const text = (el) => (el.innerText || el.value || '').trim().slice(0, 80);
+  const iconClass = (el) => {
+    const icon = el.querySelector('i, svg');
+    if (!icon) return null;
+    const c = icon.getAttribute('class');
+    return c ? c.slice(0, 80) : 'svg';
+  };
   const pick = (el) => ({
     tag: el.tagName.toLowerCase(),
     id: el.id || null,
@@ -16,6 +24,10 @@ _INSPECT_JS = """
     type: el.getAttribute('type'),
     placeholder: el.getAttribute('placeholder'),
     testid: el.getAttribute('data-testid'),
+    aria: el.getAttribute('aria-label'),
+    title: el.getAttribute('title'),
+    classes: Array.from(el.classList),
+    icon: iconClass(el),
     text: text(el),
     href: el.getAttribute('href'),
   });
@@ -37,18 +49,47 @@ _INSPECT_JS = """
 }
 """
 
+_SAFE_CLASS = re.compile(r"^[A-Za-z_][\w-]*$")
 
-def _suggest_selector(el: dict) -> str | None:
-    if el.get("testid"):
-        return f'[data-testid="{el["testid"]}"]'
-    if el.get("id"):
-        return f'#{el["id"]}'
-    if el.get("name"):
-        return f'{el["tag"]}[name="{el["name"]}"]'
-    if el.get("tag") == "button" and el.get("text"):
-        return f'button:has-text("{el["text"]}")'
-    if el.get("tag") == "a" and el.get("href"):
-        return f'a[href="{el["href"]}"]'
+
+def _quote_ok(value: str | None) -> bool:
+    return bool(value) and '"' not in value and "\n" not in value
+
+
+def _candidates(el: dict) -> list[str]:
+    tag = el["tag"]
+    out: list[str] = []
+    if _quote_ok(el.get("testid")):
+        out.append(f'[data-testid="{el["testid"]}"]')
+    if _quote_ok(el.get("id")):
+        out.append(f'[id="{el["id"]}"]')
+    if _quote_ok(el.get("name")):
+        out.append(f'{tag}[name="{el["name"]}"]')
+    if _quote_ok(el.get("aria")):
+        out.append(f'{tag}[aria-label="{el["aria"]}"]')
+    if _quote_ok(el.get("title")):
+        out.append(f'{tag}[title="{el["title"]}"]')
+    if tag in ("button", "a") and _quote_ok(el.get("text")):
+        out.append(f'{tag}:has-text("{el["text"]}")')
+    if tag == "a" and _quote_ok(el.get("href")):
+        out.append(f'a[href="{el["href"]}"]')
+    if _quote_ok(el.get("placeholder")):
+        out.append(f'{tag}[placeholder="{el["placeholder"]}"]')
+    if tag == "input" and _quote_ok(el.get("type")):
+        out.append(f'input[type="{el["type"]}"]')
+    classes = [c for c in el.get("classes", []) if _SAFE_CLASS.match(c)]
+    if classes:
+        out.append(tag + "".join(f".{c}" for c in classes))
+    return out
+
+
+def _unique_selector(page: Page, el: dict) -> str | None:
+    for sel in _candidates(el):
+        try:
+            if page.locator(sel).count() == 1:
+                return sel
+        except Exception:
+            continue  # invalid selector, try the next candidate
     return None
 
 
@@ -57,5 +98,5 @@ def inspect_page(page: Page) -> dict:
     data = page.evaluate(_INSPECT_JS)
     for group in ("inputs", "buttons", "links"):
         for el in data[group]:
-            el["selector"] = _suggest_selector(el)
+            el["selector"] = _unique_selector(page, el)
     return data
