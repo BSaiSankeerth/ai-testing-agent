@@ -1,36 +1,28 @@
-import { useEffect, useState } from 'react'
-import axios from 'axios'
+import { NavLink, Route, Routes } from 'react-router-dom'
+import Dashboard from './pages/Dashboard'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001'
+const linkClass = ({ isActive }) =>
+  `px-3 py-2 rounded-md text-sm font-medium ${isActive ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-200'
+  }`
 
-function App() {
-  const [loading, setLoading] = useState(true)
-  const [health, setHealth] = useState(null)
-  const [error, setError] = useState(null)
-
-  useEffect(() => {
-    axios
-      .get(`${API_URL}/api/health`)
-      .then((response) => setHealth(response.data))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
-  }, [])
-
+export default function App() {
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h1>AI Testing Agent Dashboard</h1>
-
-      {loading && <p>Checking backend...</p>}
-
-      {health && (
-        <p style={{ color: 'green' }}>
-          Backend connected: {health.app} ({health.environment})
-        </p>
-      )}
-
-      {error && <p style={{ color: 'red' }}>Backend error: {error}</p>}
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <header className="border-b bg-white">
+        <div className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-3">
+          <span className="text-lg font-semibold">AI Testing Agent</span>
+          <nav className="flex gap-1">
+            <NavLink to="/" end className={linkClass}>
+              Dashboard
+            </NavLink>
+          </nav>
+        </div>
+      </header>
+      <main className="mx-auto max-w-6xl px-6 py-8">
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+        </Routes>
+      </main>
     </div>
   )
 }
-
-export default App
