@@ -99,7 +99,11 @@ def run_case(
                 result.detail = f"{step.action} {out['status']}: {out['detail']}"
                 break
             if step.action == "click":
-                bm.page.wait_for_timeout(1500)
+                try:
+                    bm.page.wait_for_load_state("networkidle", timeout=5000)
+                except Exception:
+                    pass  # some pages never go idle; fall through to a short wait
+                bm.page.wait_for_timeout(1000)
         elif step.action == "expect_text":
             body = bm.page.inner_text("body")
             if step.value.lower() not in body.lower():

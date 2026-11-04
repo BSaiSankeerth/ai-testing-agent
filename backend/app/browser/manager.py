@@ -23,11 +23,13 @@ class BrowserManager:
         headless: bool = True,
         timeout_ms: int = 10_000,
         max_actions: int = 100,
+        slow_mo_ms: int = 0,
     ):
         self.allowed_origins = allowed_origins
         self.headless = headless
         self.timeout_ms = timeout_ms
         self.max_actions = max_actions
+        self.slow_mo_ms = slow_mo_ms
 
         self.actions_used = 0
         self.console_messages: list[dict] = []
@@ -44,7 +46,9 @@ class BrowserManager:
     # --- lifecycle -------------------------------------------------------
     def start(self) -> "BrowserManager":
         self._playwright = sync_playwright().start()
-        self._browser = self._playwright.chromium.launch(headless=self.headless)
+        self._browser = self._playwright.chromium.launch(
+            headless=self.headless, slow_mo=self.slow_mo_ms
+        )
         self.new_session()
         return self
 
