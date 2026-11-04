@@ -25,6 +25,7 @@ class RunState(TypedDict, total=False):
     test_cases: list[GeneratedTestCase]
     rejected_cases: list[dict]
     outcomes: list[CaseOutcome]
+    bugs: list[dict]
 
     # progress and errors
     stage: str  # planning / exploring / generating / executing / done / failed

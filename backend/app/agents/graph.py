@@ -9,6 +9,7 @@ from app.agents.planning import create_plan
 from app.agents.state import CaseOutcome, RunState
 from app.agents.test_data import RunIdentity
 from app.agents.testcase_generator import generate_test_cases
+from app.agents.bug_report import create_bug_report
 from app.browser.manager import BrowserManager
 from app.llm.base import LLMClient, LLMError
 
@@ -91,6 +92,16 @@ def build_graph(llm: LLMClient, headless: bool = True, slow_mo_ms: int = 0):
         except Exception as exc:
             return _fail("executing", str(exc).splitlines()[0][:300])
         return {"outcomes": outcomes, "stage": "done"}
+    
+    def report_node(state: RunState) -> dict:
+        bugs = []
+        for outcome in state.get("outcomes", []):
+            draft = create_bug_report(llm, outcome)
+            if draft:
+                _say(f"bug report: {draft.title}")
+                bugs.append({"case_title": outcome["case"].title, "bug": draft})
+        _say(f"{len(bugs)} bug report(s)")
+        return {"bugs": bugs}
 
     # --- wiring ----------------------------------------------------------
     graph = StateGraph(RunState)
@@ -103,6 +114,8 @@ def build_graph(llm: LLMClient, headless: bool = True, slow_mo_ms: int = 0):
     graph.add_conditional_edges("plan", _route("explore"), ["explore", END])
     graph.add_conditional_edges("explore", _route("generate"), ["generate", END])
     graph.add_conditional_edges("generate", _route("execute"), ["execute", END])
-    graph.add_edge("execute", END)
+    graph.add_node("report", report_node)
+    graph.add_conditional_edges("execute", _route("report"), ["report", END])
+    graph.add_edge("report", END)
 
     return graph.compile()
