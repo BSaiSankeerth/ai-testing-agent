@@ -55,6 +55,15 @@ def _evidence(case: GeneratedTestCase, result: CaseResult) -> dict:
     }
 
 
+def _succeeded_as_expected(case: GeneratedTestCase, result: CaseResult) -> bool:
+    """Positive case where every recorded non-GET request returned 2xx."""
+    return (
+        case.category == "positive"
+        and bool(result.api_calls)
+        and all(200 <= c["status"] < 300 for c in result.api_calls)
+    )
+
+
 def analyze(llm: LLMClient, case: GeneratedTestCase, result: CaseResult) -> Analysis:
     # Rules in code: no LLM needed, and these can never become app defects.
     if result.status == "blocked":
@@ -74,7 +83,7 @@ def analyze(llm: LLMClient, case: GeneratedTestCase, result: CaseResult) -> Anal
 
     user_message = f"<evidence>\n{json.dumps(_evidence(case, result), indent=2)}\n</evidence>"
     try:
-        return llm.complete_structured(ANALYSIS_SYSTEM_PROMPT, user_message, Analysis)
+        analysis = llm.complete_structured(ANALYSIS_SYSTEM_PROMPT, user_message, Analysis)
     except LLMError as exc:
         return Analysis(
             verdict="inconclusive",
@@ -82,3 +91,21 @@ def analyze(llm: LLMClient, case: GeneratedTestCase, result: CaseResult) -> Anal
             evidence_used=[],
             is_application_defect=False,
         )
+
+    # Guard: a guessed URL or message must never turn a successful positive
+    # flow into a reported defect.
+    if analysis.verdict == "failed" and _succeeded_as_expected(case, result):
+        calls = [
+            f"{c['method']} {c['url'].split('//', 1)[-1].split('/', 1)[-1]} returned {c['status']}"
+            for c in result.api_calls
+        ]
+        return Analysis(
+            verdict="passed",
+            reasoning=(
+                "The request(s) succeeded, so the flow worked. The model's failure "
+                f"verdict rested on an expected URL or wording that was a guess. Original: {analysis.reasoning}"
+            ),
+            evidence_used=calls,
+            is_application_defect=False,
+        )
+    return analysis
