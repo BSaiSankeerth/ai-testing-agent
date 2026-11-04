@@ -6,3 +6,4 @@ alembic
 psycopg[binary]
 playwright
 groq
+langgraph
