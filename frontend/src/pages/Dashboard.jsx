@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { errorMessage, getStats, listSessions } from '../api'
+import { Link } from 'react-router-dom'
 
 const BADGE = {
     completed: 'bg-green-100 text-green-800',
@@ -99,7 +100,11 @@ export default function Dashboard() {
                         )}
                         {sessions.map((s) => (
                             <tr key={s.id} className="border-b last:border-0">
-                                <td className="px-4 py-2 font-medium">#{s.id}</td>
+                                <td className="px-4 py-2 font-medium">
+                                    <Link to={`/sessions/${s.id}`} className="text-blue-600 hover:underline">
+                                        #{s.id}
+                                    </Link>
+                                </td>
                                 <td className="px-4 py-2">{s.target_url}</td>
                                 <td className="px-4 py-2">
                                     <span
