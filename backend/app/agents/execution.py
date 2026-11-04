@@ -9,6 +9,15 @@ from app.schemas.testcase import GeneratedTestCase
 
 NEEDS_ACCOUNT = {"{{existing_email}}"}
 
+_VALIDATION_JS = """
+() => Array.from(document.querySelectorAll('input, textarea, select'))
+    .filter(el => el.validationMessage)
+    .map(el => ({
+        field: el.getAttribute('placeholder') || el.name || el.type,
+        message: el.validationMessage,
+    }))
+"""
+
 
 @dataclass
 class CaseResult:
@@ -24,6 +33,7 @@ class CaseResult:
     http_errors: list[dict] = field(default_factory=list)
     console_errors: list[dict] = field(default_factory=list)
     duration_ms: int = 0
+    validation_messages: list[dict] = field(default_factory=list)
 
 
 def _visits_signup(case: GeneratedTestCase) -> bool:
@@ -45,6 +55,14 @@ def order_cases(cases: list[GeneratedTestCase]) -> list[GeneratedTestCase]:
         )
 
     return sorted(cases, key=key)
+
+
+def _registration_succeeded(api_calls: list[dict]) -> bool:
+    return any(
+        c["status"] in (200, 201)
+        and ("/signup" in c["url"] or "regist" in c["url"])
+        for c in api_calls
+    )
 
 
 def run_case(
@@ -93,6 +111,7 @@ def run_case(
     if result.status == "completed" and result.unmet_expectations:
         result.status = "inconclusive"
 
+    # --- evidence ---------------------------------------------------------
     result.final_url = bm.page.url
     result.page_text = bm.page.inner_text("body")[:1500]
     result.api_calls = [
@@ -102,16 +121,15 @@ def run_case(
     result.console_errors = [
         m for m in bm.console_messages[marks[2]:] if m["type"] == "error"
     ]
+    # Fixed JavaScript written by us (not the LLM): reads the browser's own
+    # form-validation messages, e.g. "Please fill out this field".
+    result.validation_messages = bm.page.evaluate(_VALIDATION_JS)
+
     safe = "".join(ch if ch.isalnum() else "_" for ch in case.title)[:50]
     result.screenshot = bm.screenshot(Path(shots_dir) / f"{safe}.png")
     result.duration_ms = int((time.time() - started) * 1000)
 
-    if _visits_signup(case):
-        if any(
-            c["status"] in (200, 201) and "/signup" in c["url"] or
-            (c["status"] in (200, 201) and "regist" in c["url"])
-            for c in result.api_calls
-        ):
-            identity.registered = True
+    if _visits_signup(case) and _registration_succeeded(result.api_calls):
+        identity.registered = True
 
     return result
