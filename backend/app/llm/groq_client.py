@@ -6,6 +6,8 @@ from pydantic import ValidationError
 from app.core.config import get_settings
 from app.llm.base import LLMConfigError, LLMError, LLMOutputError, T
 
+import time
+from groq import BadRequestError, Groq, RateLimitError
 
 class GroqClient:
     def __init__(self, model: str | None = None):
@@ -21,10 +23,18 @@ class GroqClient:
             kwargs["response_format"] = {"type": "json_object"}
 
         last_error: Exception | None = None
-        for _ in range(attempts):
+        for attempt in range(attempts):
             try:
                 response = self._client.chat.completions.create(**kwargs)
                 return response.choices[0].message.content or ""
+            except RateLimitError as exc:
+                last_error = exc
+                if "per day" in str(exc).lower():
+                    raise LLMError("Groq daily quota exhausted; try later or switch model") from exc
+                wait = 15 * (attempt + 1)
+                print(f"[llm] rate limited, waiting {wait}s (attempt {attempt + 1}/{attempts})", flush=True)
+                time.sleep(wait)
+                continue
             except BadRequestError as exc:
                 # Groq rejected the model's JSON as malformed: just try again.
                 if json_mode and "json_validate_failed" in str(exc):

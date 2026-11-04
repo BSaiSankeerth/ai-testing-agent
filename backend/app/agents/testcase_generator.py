@@ -85,7 +85,11 @@ def generate_test_cases(
     accepted: list[GeneratedTestCase] = []
     rejected: list[dict] = []
 
+    quota_hit = False
     for task in plan.tasks:
+        if quota_hit:
+            rejected.append({"title": task.scenario, "reason": "skipped: LLM quota exhausted earlier in this run"})
+            continue
         user_message = (
             f"<task>\n{task.model_dump_json(indent=2)}\n</task>\n\n"
             f"<snapshot>\n{snapshot}\n</snapshot>"
@@ -94,6 +98,8 @@ def generate_test_cases(
             case = llm.complete_structured(GENERATOR_SYSTEM_PROMPT, user_message, GeneratedTestCase)
         except LLMError as exc:
             rejected.append({"title": task.scenario, "reason": f"generation failed: {str(exc)[:200]}"})
+            if "RateLimit" in str(exc) or "quota" in str(exc).lower():
+                quota_hit = True
             continue
 
         reason = _verify(case, known)

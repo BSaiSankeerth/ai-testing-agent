@@ -32,6 +32,16 @@ def _result_status(outcome: dict) -> str:
     return outcome["analysis"].verdict
 
 
+def _session_status(final: RunState) -> str:
+    if final.get("stage") != "done":
+        return "failed"
+    incomplete = bool(final.get("rejected_cases")) or any(
+        o["analysis"].reasoning.startswith("Analysis failed")
+        for o in final.get("outcomes", [])
+    )
+    return "completed_with_gaps" if incomplete else "completed"
+
+
 def save_run(
     db: Session,
     user_id: int,
@@ -48,7 +58,7 @@ def save_run(
                 started_at=started_at,
             )
             db.add(session)
-        session.status = "completed" if final.get("stage") == "done" else "failed"
+        session.status = _session_status(final)
         session.completed_at = datetime.now(timezone.utc)
         db.flush()
 
@@ -75,7 +85,7 @@ def save_run(
                 status=status,
                 actual_result=analysis.reasoning,
                 duration_ms=res["duration_ms"],
-                error_details=res["detail"] or None
+                error_details=(res["detail"] or None)
                 if res["status"] in ("automation_error", "blocked")
                 else None,
             )

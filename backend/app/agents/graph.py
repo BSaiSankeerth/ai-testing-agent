@@ -3,13 +3,13 @@ from dataclasses import asdict
 from langgraph.graph import END, START, StateGraph
 
 from app.agents.analysis import analyze
+from app.agents.bug_report import create_bug_report
 from app.agents.exploration import explore
 from app.agents.execution import CaseResult, order_cases, run_case
 from app.agents.planning import create_plan
 from app.agents.state import CaseOutcome, RunState
 from app.agents.test_data import RunIdentity
 from app.agents.testcase_generator import generate_test_cases
-from app.agents.bug_report import create_bug_report
 from app.browser.manager import BrowserManager
 from app.llm.base import LLMClient, LLMError
 
@@ -65,7 +65,9 @@ def build_graph(llm: LLMClient, headless: bool = True, slow_mo_ms: int = 0):
         _say("generating test cases...")
         accepted, rejected = generate_test_cases(llm, state["plan"], state["pages"])
         if not accepted:
-            return _fail("generating", "no valid test cases were produced")
+            failure = _fail("generating", "no valid test cases were produced")
+            failure["rejected_cases"] = rejected  # keep the reasons for the database
+            return failure
         _say(f"{len(accepted)} cases accepted, {len(rejected)} rejected")
         return {"test_cases": accepted, "rejected_cases": rejected, "stage": "executing"}
 
@@ -92,7 +94,7 @@ def build_graph(llm: LLMClient, headless: bool = True, slow_mo_ms: int = 0):
         except Exception as exc:
             return _fail("executing", str(exc).splitlines()[0][:300])
         return {"outcomes": outcomes, "stage": "done"}
-    
+
     def report_node(state: RunState) -> dict:
         bugs = []
         for outcome in state.get("outcomes", []):
@@ -109,12 +111,12 @@ def build_graph(llm: LLMClient, headless: bool = True, slow_mo_ms: int = 0):
     graph.add_node("explore", explore_node)
     graph.add_node("generate", generate_node)
     graph.add_node("execute", execute_node)
+    graph.add_node("report", report_node)
 
     graph.add_edge(START, "plan")
     graph.add_conditional_edges("plan", _route("explore"), ["explore", END])
     graph.add_conditional_edges("explore", _route("generate"), ["generate", END])
     graph.add_conditional_edges("generate", _route("execute"), ["execute", END])
-    graph.add_node("report", report_node)
     graph.add_conditional_edges("execute", _route("report"), ["report", END])
     graph.add_edge("report", END)
 
