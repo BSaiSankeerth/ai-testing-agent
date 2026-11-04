@@ -1,5 +1,6 @@
 import { NavLink, Route, Routes } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
+import NewSession from './pages/NewSession'
 
 const linkClass = ({ isActive }) =>
   `px-3 py-2 rounded-md text-sm font-medium ${isActive ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-200'
@@ -15,12 +16,16 @@ export default function App() {
             <NavLink to="/" end className={linkClass}>
               Dashboard
             </NavLink>
+            <NavLink to="/new" className={linkClass}>
+              New session
+            </NavLink>
           </nav>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-6 py-8">
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/new" element={<NewSession />} />
         </Routes>
       </main>
     </div>
