@@ -33,18 +33,23 @@ def _result_status(outcome: dict) -> str:
 
 
 def save_run(
-    db: Session, user_id: int, final: RunState, started_at: datetime
+    db: Session,
+    user_id: int,
+    final: RunState,
+    started_at: datetime,
+    session: TestSession | None = None,
 ) -> TestSession:
     try:
-        session = TestSession(
-            user_id=user_id,
-            target_url=final["target_url"],
-            instructions=final["instructions"],
-            status="completed" if final.get("stage") == "done" else "failed",
-            started_at=started_at,
-            completed_at=datetime.now(timezone.utc),
-        )
-        db.add(session)
+        if session is None:
+            session = TestSession(
+                user_id=user_id,
+                target_url=final["target_url"],
+                instructions=final["instructions"],
+                started_at=started_at,
+            )
+            db.add(session)
+        session.status = "completed" if final.get("stage") == "done" else "failed"
+        session.completed_at = datetime.now(timezone.utc)
         db.flush()
 
         result_ids: dict[str, int] = {}  # case title -> test_results.id
