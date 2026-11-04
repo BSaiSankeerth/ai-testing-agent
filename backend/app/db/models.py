@@ -132,6 +132,7 @@ class BugReport(Base):
     title: Mapped[str] = mapped_column(String(255))
     description: Mapped[str] = mapped_column(Text)
     severity: Mapped[str] = mapped_column(String(20))  # critical/high/medium/low
+    priority: Mapped[str] = mapped_column(String(20), default="normal")
     steps_to_reproduce: Mapped[list] = mapped_column(JSON)
     expected_result: Mapped[str] = mapped_column(Text)
     actual_result: Mapped[str] = mapped_column(Text)
