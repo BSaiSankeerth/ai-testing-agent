@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     approved_targets: list[str] = ["http://localhost:3000"]
     approved_api_origins: list[str] = ["http://localhost:8000"]
 
+    jwt_secret: SecretStr  # required: the app refuses to start without it
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 60
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
