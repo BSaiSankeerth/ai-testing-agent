@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { errorMessage, getSession } from '../api'
+import EvidencePanel from '../components/EvidencePanel'
 
 const BADGE = {
     completed: 'bg-green-100 text-green-800',
@@ -39,6 +40,7 @@ export default function SessionDetail() {
     const { id } = useParams()
     const [session, setSession] = useState(null)
     const [error, setError] = useState(null)
+    const [openResult, setOpenResult] = useState(null)
 
     useEffect(() => {
         let timer = null
@@ -159,6 +161,15 @@ export default function SessionDetail() {
                                             <span className="text-slate-500">Details:</span> {r.error_details}
                                         </div>
                                     )}
+                                    {r && c.steps.length > 0 && (
+                                        <button
+                                            onClick={() => setOpenResult(openResult === r.id ? null : r.id)}
+                                            className="mt-2 text-sm text-blue-600 hover:underline"
+                                        >
+                                            {openResult === r.id ? 'Hide evidence' : 'View evidence'}
+                                        </button>
+                                    )}
+                                    {r && openResult === r.id && <EvidencePanel resultId={r.id} />}
                                 </div>
                             )
                         })}

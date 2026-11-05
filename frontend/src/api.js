@@ -55,3 +55,11 @@ export const createSession = (targetUrl, instructions) =>
     client
         .post('/sessions', { target_url: targetUrl, instructions })
         .then((r) => r.data)
+
+export const getEvidence = (resultId) =>
+    client.get(`/results/${resultId}/evidence`).then((r) => r.data)
+
+export const getScreenshotUrl = (resultId) =>
+    client
+        .get(`/results/${resultId}/screenshot`, { responseType: 'blob' })
+        .then((r) => URL.createObjectURL(r.data))
