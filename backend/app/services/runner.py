@@ -38,7 +38,11 @@ def _execute(session_id: int, user_id: int) -> None:
             session.started_at = started
             db.commit()
             try:
-                graph = build_graph(GroqClient(), headless=True)
+                graph = build_graph(
+                    GroqClient(),
+                    headless=settings.browser_headless,
+                    slow_mo_ms=settings.browser_slow_mo_ms,
+                )
                 final = graph.invoke(
                     {
                         "target_url": session.target_url,
