@@ -1,3 +1,4 @@
+import uuid
 from dataclasses import asdict
 
 from langgraph.graph import END, START, StateGraph
@@ -12,6 +13,7 @@ from app.agents.test_data import RunIdentity
 from app.agents.testcase_generator import generate_test_cases
 from app.browser.manager import BrowserManager
 from app.llm.base import LLMClient, LLMError
+
 
 
 def _say(message: str) -> None:
@@ -74,12 +76,13 @@ def build_graph(llm: LLMClient, headless: bool = True, slow_mo_ms: int = 0):
     def execute_node(state: RunState) -> dict:
         identity = RunIdentity.new()  # stays inside this node
         outcomes: list[CaseOutcome] = []
+        shots_dir = f"storage/screenshots/{uuid.uuid4().hex[:12]}"
         try:
             with browser(state) as bm:
                 for case in order_cases(state["test_cases"]):
                     _say(f"running: {case.title}")
                     try:
-                        result = run_case(bm, case, identity)
+                        result = run_case(bm, case, identity, shots_dir=shots_dir)
                     except Exception as exc:
                         result = CaseResult(
                             case.title,
