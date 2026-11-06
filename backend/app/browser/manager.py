@@ -15,7 +15,7 @@ from app.browser.url_guard import BlockedURLError, validate_url
 class ActionLimitExceeded(Exception):
     """Raised when a session performs more actions than allowed."""
 
-
+#
 class BrowserManager:
     def __init__(
         self,

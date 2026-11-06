@@ -21,7 +21,7 @@ class GroqClient:
         kwargs = {"model": self.model, "messages": messages, "temperature": 0.2}
         if json_mode:
             kwargs["response_format"] = {"type": "json_object"}
-
+#
         last_error: Exception | None = None
         for attempt in range(attempts):
             try:

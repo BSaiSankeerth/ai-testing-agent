@@ -143,7 +143,7 @@ def build_graph(llm: LLMClient, headless: bool = True, slow_mo_ms: int = 0):
 
     return graph.compile()
 
-
+#
 def _finished(session_id: int | None) -> list:
     """Verdicts reported so far for this session (so each new one is appended)."""
     if session_id is None:

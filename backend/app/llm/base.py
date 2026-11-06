@@ -19,5 +19,5 @@ class LLMOutputError(LLMError):
 
 class LLMClient(Protocol):
     def complete_text(self, system: str, user: str) -> str: ...
-
+#
     def complete_structured(self, system: str, user: str, schema: type[T]) -> T: ...

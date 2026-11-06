@@ -7,7 +7,7 @@ DEFAULT_PORTS = {"http": 80, "https": 443}
 class BlockedURLError(Exception):
     """Raised when a URL is not on the approved target list."""
 
-
+#
 def _origin(url: str) -> tuple[str, str, int]:
     try:
         parsed = urlparse(url)

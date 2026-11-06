@@ -11,7 +11,7 @@ DESTRUCTIVE = re.compile(
     r"\b(delete|pay|place order|purchase|buy now)\b", re.IGNORECASE
 )
 
-
+#
 class ToolRefused(Exception):
     """Internal: a validation rule rejected the request."""
 

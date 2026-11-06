@@ -73,7 +73,7 @@ def run_case(
 ) -> CaseResult:
     if _uses_account(case) and not identity.registered:
         return CaseResult(case.title, "blocked", "Registration did not succeed in this run")
-
+#
     bm.new_session()
     tools = BrowserTools(bm)
     marks = (len(bm.api_calls), len(bm.http_errors), len(bm.console_messages))

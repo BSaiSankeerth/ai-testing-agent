@@ -54,7 +54,7 @@ class TestSession(Base):
     test_cases: Mapped[list["TestCase"]] = relationship(
         back_populates="session", cascade="all, delete-orphan"
     )
-
+    #
     progress: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
 

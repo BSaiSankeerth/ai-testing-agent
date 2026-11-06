@@ -4,7 +4,7 @@ from app.schemas.analysis import Analysis
 from app.schemas.planning import TestPlan
 from app.schemas.testcase import GeneratedTestCase
 
-
+#
 class CaseOutcome(TypedDict):
     """Everything known about one executed test case."""
 

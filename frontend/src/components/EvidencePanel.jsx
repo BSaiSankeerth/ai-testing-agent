@@ -9,7 +9,7 @@ function Section({ title, children }) {
         </div>
     )
 }
-
+// 
 const isBlockedNoise = (m) => m.text.includes('net::ERR_FAILED')
 
 export default function EvidencePanel({ resultId }) {

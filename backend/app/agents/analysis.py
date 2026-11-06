@@ -91,7 +91,7 @@ def analyze(llm: LLMClient, case: GeneratedTestCase, result: CaseResult) -> Anal
             evidence_used=[],
             is_application_defect=False,
         )
-
+ #
     # Guard: a guessed URL or message must never turn a successful positive
     # flow into a reported defect.
     if analysis.verdict == "failed" and _succeeded_as_expected(case, result):

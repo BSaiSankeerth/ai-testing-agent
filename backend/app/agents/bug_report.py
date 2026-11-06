@@ -42,7 +42,7 @@ def build_steps(outcome: CaseOutcome) -> list[str]:
             steps.append(f"Click {s.selector}")
     return steps or ["See test case steps"]
 
-
+#
 def _failure_payload(outcome: CaseOutcome) -> dict:
     r, a = outcome["result"], outcome["analysis"]
     return {

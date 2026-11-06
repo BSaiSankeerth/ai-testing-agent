@@ -1,7 +1,7 @@
 import re
 
 from playwright.sync_api import Page
-
+#
 _INSPECT_JS = """
 () => {
   const visible = (el) => {

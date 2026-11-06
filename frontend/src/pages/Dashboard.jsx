@@ -9,7 +9,7 @@ const BADGE = {
     pending: 'bg-slate-100 text-slate-700',
     failed: 'bg-red-100 text-red-800',
 }
-
+// 
 function Card({ label, value, tone = 'text-slate-900' }) {
     return (
         <div className="rounded-lg border bg-white p-4 shadow-sm">

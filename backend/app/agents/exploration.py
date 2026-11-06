@@ -5,7 +5,7 @@ from urllib.parse import urljoin, urlparse
 from app.browser.inspector import inspect_page
 from app.browser.manager import BrowserManager
 from app.browser.url_guard import BlockedURLError, validate_url
-
+#
 _NUMERIC_SEGMENT = re.compile(r"/\d+(?=/|$)")
 DEFAULT_FOCUS = ("login", "register", "signup", "sign up", "sign-up", "account")
 
