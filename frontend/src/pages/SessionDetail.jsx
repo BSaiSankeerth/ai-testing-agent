@@ -104,9 +104,48 @@ export default function SessionDetail() {
             </div>
 
             {active && (
-                <div className="mb-6 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
-                    Testing in progress. Planning, exploring, generating and running test cases. This page
-                    refreshes automatically; results appear when the run finishes.
+                <div className="mb-6 rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                    <div className="mb-3 flex flex-wrap gap-2">
+                        {['planning', 'exploring', 'generating', 'executing', 'reporting'].map((st) => {
+                            const current = session.progress?.stage === st
+                            return (
+                                <span
+                                    key={st}
+                                    className={`rounded-full px-3 py-1 text-xs font-medium ${current ? 'bg-blue-600 text-white' : 'bg-white text-slate-500'
+                                        }`}
+                                >
+                                    {st}
+                                </span>
+                            )
+                        })}
+                    </div>
+                    {session.progress?.current_case ? (
+                        <div>
+                            Running test case {session.progress.case_index} of {session.progress.case_total}:{' '}
+                            <span className="font-medium">{session.progress.current_case}</span>
+                        </div>
+                    ) : (
+                        <div>
+                            {session.progress?.stage === 'exploring' && session.progress?.pages_explored
+                                ? `Explored ${session.progress.pages_explored} pages.`
+                                : 'Working...'}
+                        </div>
+                    )}
+                    {session.progress?.finished?.length > 0 && (
+                        <ul className="mt-3 space-y-1">
+                            {session.progress.finished.map((f, i) => (
+                                <li key={i} className="flex items-center gap-2">
+                                    <span
+                                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${BADGE[f.verdict] || 'bg-slate-100 text-slate-700'
+                                            }`}
+                                    >
+                                        {f.verdict}
+                                    </span>
+                                    {f.title}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
             )}
 

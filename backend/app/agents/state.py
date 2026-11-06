@@ -15,6 +15,7 @@ class CaseOutcome(TypedDict):
 
 class RunState(TypedDict, total=False):
     # inputs
+    session_id: int
     target_url: str
     instructions: str
     allowed_origins: list[str]

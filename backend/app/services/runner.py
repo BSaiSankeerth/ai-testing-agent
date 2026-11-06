@@ -45,6 +45,7 @@ def _execute(session_id: int, user_id: int) -> None:
                 )
                 final = graph.invoke(
                     {
+                        "session_id": session_id,
                         "target_url": session.target_url,
                         "instructions": session.instructions,
                         "allowed_origins": settings.approved_targets + settings.approved_api_origins,

@@ -55,6 +55,8 @@ class TestSession(Base):
         back_populates="session", cascade="all, delete-orphan"
     )
 
+    progress: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
 
 class TestCase(Base):
     __tablename__ = "test_cases"

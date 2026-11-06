@@ -56,6 +56,7 @@ class SessionSummary(BaseModel):
     created_at: datetime
     started_at: datetime | None
     completed_at: datetime | None
+    progress: dict | None = None
 
 
 class SessionDetail(SessionSummary):
